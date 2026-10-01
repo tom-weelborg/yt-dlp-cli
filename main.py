@@ -31,7 +31,20 @@ from yt_dlp import YoutubeDL
     default=False,
     help="Whether to download only audio"
 )
-def main(url: str, path: str, create_path: bool, audio: bool) -> None:
+@click.option(
+    "-s",
+    "--subtitles",
+    multiple=True,
+    default=[],
+    help="What subtitles to download"
+)
+def main(
+    url: str,
+    path: str,
+    create_path: bool,
+    audio: bool,
+    subtitles: list[str],
+) -> None:
     validate_url(url)
 
     path = Path(path).resolve()
@@ -42,6 +55,9 @@ def main(url: str, path: str, create_path: bool, audio: bool) -> None:
         options = get_audio_options(path)
     else:
         options = get_video_options(path)
+
+    if subtitles:
+        options.update(get_subtitle_options(subtitles))
 
     download(options, url)
 
@@ -74,6 +90,15 @@ def get_video_options(output_dir: Path) -> dict:
     return {
         "format": "bestvideo*+bestaudio/best",
         "outtmpl": str(output_dir / "%(title)s.%(ext)s")
+    }
+
+def get_subtitle_options(languages: list[str]) -> dict:
+    return {
+        "writesubtitles": True,
+        "writeautomaticsub": True,
+        "subtitleslangs": languages,
+        "subtitlesformat": "srt",
+        "sleep_interval_subtitles": 1,
     }
 
 def download(options: dict, url: str):
